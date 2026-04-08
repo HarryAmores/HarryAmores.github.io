@@ -1,6 +1,6 @@
 {
   "name": "Construction Material Monitoring",
-  "short_name": "CMM",
+  "short_name": "Material Monitoring",
   "description": "Construction inventory management system",
   "start_url": "/",
   "display": "standalone",
