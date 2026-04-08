@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Construction Inventory</title>
+<style>
+ :root { --bg:#0f172a; --panel:#0b1220; --muted:#94a3b8; --text:#e5e7eb; --accent:#22c55e; --blue:#3b82f6; --danger:#ef4444; --warn:#f59e0b; --border:#1f2937; }
+ *{box-sizing:border-box}
+ body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+ header.appbar{position:sticky;top:0;background:rgba(11,18,32,.9);backdrop-filter:saturate(150%) blur(6px);border-bottom:1px solid var(--border);z-index:10}
+ .appbar-inner{max-width:1160px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:8px 12px}
+ .brand{font-weight:700;color:#e5e7eb;text-decoration:none;cursor:pointer}
+ .right{display:flex;align-items:center;gap:10px}
+ .chip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:999px;padding:6px 10px;background:#0e172a}
+ .notif-badge{display:inline-flex;align-items:center;justify-content:center;background:#f59e0b;color:#000;border-radius:50%;width:20px;height:20px;font-size:0.75rem;font-weight:bold;margin-left:4px}
+ .btn{display:inline-flex;align-items:center;gap:8px;background:var(--blue);color:#fff;border:none;border-radius:10px;padding:10px 14px;cursor:pointer;font-weight:600}
+ .btn.small{padding:6px 10px;font-size:.9rem}
+ .btn.secondary{background:var(--panel);border:1px solid var(--border)}
+ .btn.danger{background:var(--danger)}
+ .btn.success{background:var(--accent);color:#000}
+ .btn:disabled{opacity:0.5;cursor:not-allowed}
+ .container{max-width:1160px;margin:0 auto;padding:12px 16px 40px}
+ .card{background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,0));border:1px solid var(--border);border-radius:12px;padding:14px;margin:12px 0}
+ .grid{display:grid;gap:12px}
+ .grid-3{grid-template-columns:1fr}
+ @media(min-width:900px){ .grid-3{grid-template-columns:1fr 1fr 1fr} }
+ label{display:block;font-size:.85rem;color:var(--muted);margin-bottom:6px}
+ input,select,textarea{width:100%;background:#0b1220;color:#e5e7eb;border:1px solid var(--border);border-radius:10px;padding:10px 12px;text-transform:uppercase}
+ input:disabled,select:disabled{opacity:0.6;cursor:not-allowed}
+ input.locked{background:rgba(239,68,68,.08)}
+ table{width:100%;border-collapse:collapse}
+ th,td{padding:8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+ thead th{font-size:.85rem;color:var(--muted);font-weight:600}
+ .help{color:var(--muted);font-size:.85rem}
+ .success{color:var(--accent);font-weight:600}
+ .error{color:#ef4444;font-weight:600}
+ .warn{color:#f59e0b;font-weight:600}
+ .scroll-x{overflow-x:auto}
+ .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;border:1px solid var(--border);font-size:.85rem}
+ .badge.complete{background:rgba(34,197,94,.1);border-color:#14532d;color:#22c55e}
+ .badge.partial{background:rgba(245,158,11,.08);border-color:#92400e;color:#f59e0b}
+ .badge.pending{background:rgba(148,163,184,.12);border-color:#334155;color:#94a3b8}
+ .notif-dot{display:inline-block;width:10px;height:10px;border-radius:999px;background:#f59e0b}
+ .modal-mask{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:3000}
+ .modal{background:#0b1220;border:1px solid var(--border);border-radius:12px;max-width:720px;width:min(96%,720px);padding:16px}
+ .confirm-modal{max-width:500px;border-color:var(--warn)}
+ .confirm-body{background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.3);border-radius:8px;padding:16px;margin:16px 0}
+ .view{display:none}
+ .success-modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#0b1220;border:2px solid var(--accent);border-radius:12px;padding:24px;text-align:center;z-index:4000;min-width:300px}
+ .success-modal h2{margin:0 0 10px 0;color:var(--accent)}
+ .success-modal p{margin:0;color:var(--text)}
+ .predictions{position:absolute;background:#0b1220;border:1px solid var(--border);border-radius:8px;max-height:200px;overflow-y:auto;z-index:100;width:90%;margin-top:2px}
+ .prediction-item{padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border)}
+ .prediction-item:hover{background:rgba(59,130,246,.2)}
+ .file-upload-section{background:rgba(59,130,246,.1);border:1px dashed var(--blue);border-radius:10px;padding:16px;margin-top:12px}
+ .file-input-wrapper{position:relative;overflow:hidden;display:inline-block;width:100%}
+ .file-input-wrapper input[type=file]{position:absolute;left:-9999px}
+ .file-input-label{display:inline-flex;align-items:center;gap:8px;background:var(--blue);color:#fff;border-radius:10px;padding:10px 14px;cursor:pointer;font-weight:600;width:100%;justify-content:center;transition:background 0.2s}
+ .file-input-label:hover{background:#2563eb}
+ .file-input-wrapper.dragover .file-input-label{background:#1d4ed8;opacity:0.8}
+ .file-preview{margin-top:12px;padding:12px;background:rgba(59,130,246,.05);border:1px solid var(--border);border-radius:10px;display:none}
+ .file-preview.active{display:block}
+ .file-preview-item{display:flex;align-items:center;justify-content:space-between;padding:8px;background:rgba(59,130,246,.1);border-radius:8px;margin-bottom:8px}
+ .file-preview-item:last-child{margin-bottom:0}
+ .file-preview-name{font-size:.9rem;color:var(--text)}
+ .file-preview-size{font-size:.8rem;color:var(--muted)}
+ .remove-file-btn{background:var(--danger);color:#fff;border:none;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:.85rem}
+ .remove-file-btn:hover{background:#dc2626}
+</style>
+</head>
+<body>
+<header class="appbar">
+ <div class="appbar-inner">
+  <a id="brandLink" class="brand" href="#">Construction Inventory — V64</a>
+  <div class="right">
+   <button id="btnNotifications" class="btn small secondary">
+     🔔
+     <span id="notifDot" class="notif-dot" style="display:none"></span>
+     <span id="notifBadge" class="notif-badge" style="display:none">0</span>
+   </button>
+   <div class="chip" id="userNameChip">Signed out</div>
+   <button id="btnLogout" class="btn small secondary" disabled>Logout</button>
+  </div>
+ </div>
+</header>
+
+<!-- Login Modal -->
+<div id="loginMask" style="position:fixed;inset:0;background:rgba(15,23,42,.96);display:flex;align-items:center;justify-content:center;z-index:2000;">
+ <div style="background:#0b1220;border:1px solid var(--border);border-radius:12px;padding:18px;width:min(360px,92%)">
+  <h2 style="margin:0 0 10px 0"> 🔐Sign in</h2>
+  <label>Username</label>
+  <input id="loginUser" type="text" autocomplete="username" placeholder="Enter your username" />
+  <label style="margin-top:8px">Password</label>
+  <input id="loginPass" type="password" autocomplete="current-password" placeholder="Enter your password" />
+  <div id="loginMsg" class="help" style="margin-top:8px"></div>
+  <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px">
+   <button id="btnLogin" class="btn" type="button">Sign in</button>
+  </div>
+ </div>
+</div>
+
+<!-- Success Modal -->
+<div id="successModal" class="success-modal" style="display:none">
+ <h2>✓ Success</h2>
+ <p id="successMsg"></p>
+</div>
+
+<!-- Confirm Modal -->
+<div id="confirmMask" class="modal-mask">
+ <div class="modal confirm-modal">
+  <h3 style="margin:0 0 12px 0;color:var(--warn)">🔔 Confirm Action</h3>
+  <p id="confirmMsg" class="help"></p>
+  <div class="confirm-body">
+   <p id="confirmDetails" style="margin:0;color:var(--text);font-size:.9rem"></p>
+  </div>
+  <div style="display:flex;gap:10px;margin-top:20px">
+   <button id="btnConfirmCancel" class="btn secondary" style="flex:1;justify-content:center">Cancel</button>
+   <button id="btnConfirmAccept" class="btn success" style="flex:1;justify-content:center">Accept</button>
+  </div>
+ </div>
+</div>
+
+<!-- Notifications Modal -->
+<div id="notifMask" class="modal-mask">
+ <div class="modal">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+    <h3 style="margin:0">Pending Transfers</h3>
+    <button id="btnCloseNotif" class="btn small secondary">Close</button>
+  </div>
+  <div id="notifMsg" class="help"></div>
+  <div class="scroll-x" style="margin-top:8px">
+    <table id="notifTable"><thead><tr>
+      <th>Created</th><th>From</th><th>To</th><th>Description</th><th>Qty</th><th>Unit</th><th>Doc Type</th><th></th>
+    </tr></thead><tbody></tbody></table>
+  </div>
+ </div>
+</div>
+
+<div class="container">
+ <!-- DASHBOARD -->
+ <section id="viewDashboard" class="card">
+  <h2 style="margin:6px 0 10px">📊 Dashboard</h2>
+  <div class="help">Welcome. Use the modules below.</div>
+  <div class="grid grid-3" style="margin-top:8px">
+   <div class="card"><h3> 📥 Material Input</h3><div class="help">PR Input with code predictions & auto-fill</div><div style="margin-top:10px"><button class="btn" onclick="showView('material')">Open</button></div></div>
+   <div class="card"><h3> 📦 On‑site Inventory</h3><div class="help">IN/OUT with auto-recall balances</div><div style="margin-top:10px"><button class="btn" onclick="showView('onsite')">Open</button></div></div>
+   <div class="card"><h3> 🔍 Balance Search</h3><div class="help">Query inventory</div><div style="margin-top:10px"><button class="btn" onclick="showView('balance')">Open</button></div></div>
+  </div>
+ </section>
+
+ <!-- MATERIAL INPUT -->
+ <section id="viewMaterial" class="view">
+  <form id="invForm" class="card" novalidate>
+   <h2 style="margin-top:0">📥Material Input</h2>
+   <div class="grid" style="grid-template-columns:1fr 1fr">
+    <div><label>Transaction Date</label><input type="date" id="transDate" disabled /><div class="help"></div></div>
+    <div id="projectSiteField"><label>Project Site</label><input type="text" id="projectSite" disabled /><div class="help"></div></div>
+    <div><label>PR Number *</label><input type="text" id="prNumber" placeholder="PR-0001" /><div id="recallMsg" class="help"></div></div>
+    <div><label>PO Number</label><input type="text" id="poNumber" placeholder="PO-0001" /><div class="help"></div></div>
+    <div><label>R Number</label><input type="text" id="drNumber" placeholder="DR-0001" /></div>
+    <div><label>Status</label><select id="docStatus"><option>Active</option><option>Change Order</option><option>Canceled</option></select></div>
+   </div>
+   <h3>Materials</h3>
+   <div class="scroll-x" style="margin-top:8px">
+    <table id="itemsTable"><thead><tr>
+     <th style="min-width:150px">Item Code</th>
+     <th style="min-width:260px">Description</th>
+     <th style="min-width:120px">PO Qty Ordered</th>
+     <th style="min-width:140px">PO Qty Received</th>
+     <th style="min-width:120px">Balance</th>
+     <th style="min-width:160px">Status</th>
+     <th></th>
+    </tr></thead><tbody></tbody></table>
+   </div>
+   <div style="margin:10px 0"><button type="button" class="btn secondary" id="addRowBtn">+ Add another material</button></div>
+   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px"><button type="submit" class="btn" id="submitBtn">Submit</button><button type="reset" class="btn secondary" id="resetBtn">Reset</button></div>
+   <div id="formMsg" class="help" style="margin-top:8px"></div>
+  </form>
+
+  <section class="card">
+   <h3 style="margin:6px 0">Recent Transactions</h3>
+   <div class="help" id="recentMsg">Loading…</div>
+   <div class="scroll-x" style="margin-top:8px">
+    <table id="recentTable"><thead><tr>
+     <th style="min-width:180px">Timestamp</th>
+     <th style="min-width:160px">Transaction Date</th>
+     <th>PR#</th><th>PO#</th><th>DR#</th>
+     <th style="min-width:140px">Project Site</th>
+     <th style="min-width:120px">Item Code</th>
+     <th style="min-width:260px">Description</th>
+     <th>Ordered</th><th>Received</th><th>Balance</th>
+     <th style="min-width:120px">Status</th>
+    </tr></thead><tbody></tbody></table>
+   </div>
+  </section>
+ </section>
+
+ <!-- ONSITE -->
+ <section id="viewOnsite" class="view">
+  <form id="onsiteForm" class="card" novalidate>
+   <h2 style="margin-top:0">📦On‑site Material Inventory</h2>
+   <div class="grid" style="grid-template-columns:1fr 1fr">
+    <div><label>Inventory Date</label><input type="date" id="invDate" /><div class="help"></div></div>
+    <div id="siteOnField"><label>Project Site</label><input type="text" id="siteOn" disabled /><div class="help"></div></div>
+    <div><label>TO PROJECT SITE *</label><select id="toProjectSite" required><option value="">Select a site…</option></select><div class="help"></div></div>
+    <div><label>Doc Type *</label><select id="docTypeField" required><option value="">Select Doc Type…</option><option value="STS">STS</option><option value="RR">RR</option><option value="Goods Issue">Goods Issue</option></select><div class="help">Required field</div></div>
+    <div><label>Document Number *</label><input type="text" id="docNumber" placeholder="DOC-0001" required /><div class="help">Required field</div></div>
+   </div>
+   <div style="display:flex;gap:10px;align-items:center;margin-top:10px"><div class="help">Mode:</div>
+    <label><input type="radio" name="modeIO" value="IN" checked> IN (Receive)</label>
+    <label><input type="radio" name="modeIO" value="OUT"> OUT (Dispatch)</label>
+   </div>
+   <div id="recallOnsiteMsg" class="help" style="margin:10px 0"></div>
+   <div class="scroll-x" style="margin-top:8px">
+    <table id="onsiteTable"><thead><tr>
+     <th style="min-width:260px">Description</th>
+     <th id="thIn" style="min-width:110px">IN Qty *</th>
+     <th id="thOut" style="min-width:110px">OUT Qty *</th>
+     <th style="min-width:160px">Remaining</th>
+     <th style="min-width:120px">Unit *</th>
+     <th></th>
+    </tr></thead><tbody></tbody></table>
+   </div>
+   <div style="margin:10px 0"><button type="button" class="btn secondary" id="addOnsiteRowBtn">+ Add item</button></div>
+   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px"><button type="submit" class="btn" id="submitOnsiteBtn">Submit</button><button type="reset" class="btn secondary" id="resetOnsiteBtn">Reset</button></div>
+   <div id="onsiteMsg" class="help" style="margin-top:8px"></div>
+  </form>
+ </section>
+
+ <!-- BALANCE SEARCH -->
+ <section id="viewBalance" class="view">
+  <div class="card">
+   <h2 style="margin-top:0">🔍 Balance Search</h2>
+   <div class="help">Search by Description across all sites.</div>
+   <div class="grid" style="grid-template-columns:1fr auto;align-items:end;gap:10px;margin-top:8px">
+    <div>
+     <label>Description</label>
+     <input id="balDesc" type="text" placeholder="TYPE TO SEARCH" list="balPredictDescs" />
+    </div>
+    <div>
+     <button class="btn" id="btnBalSearch" type="button">Search</button>
+    </div>
+   </div>
+   <div id="balMsg" class="help" style="margin-top:8px"></div>
+   <div class="scroll-x" style="margin-top:10px">
+    <table id="balTable"><thead><tr>
+     <th style="min-width:140px">Latest Date</th>
+     <th style="min-width:160px">Project Site</th>
+     <th style="min-width:260px">Description</th>
+     <th style="min-width:140px">Remaining</th>
+     <th style="min-width:100px">Unit</th>
+    </tr></thead><tbody></tbody></table>
+   </div>
+  </div>
+ </section>
+</div>
+
+<datalist id="allowedItemCodes"></datalist>
+<datalist id="allowedItemDescs"></datalist>
+<datalist id="balPredictDescs"></datalist>
+<datalist id="onsitePredictDescs"></datalist>
+
+<script>
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwD2kccYYVARx8J3rl-TF6CHgnZZZFCyAv1GjFQOU6yC40k9jiS9LF_zA_l6ovHZdOW/exec';
+
+let SESSION_TOKEN = null;
+let SESSION_ROLE = '';
+let SESSION_USERNAME = '';
+let SITES = [];
+let ALL_SITES = [];
+let ITEMS = [];
+let ITEM_BY_CODE = {};
+let CODE_BY_DESC = {};
+let ONSITE_BALANCES = {};
+let SELECTED_FILES = [];
+
+function postForm(data) { 
+  return fetch(WEB_APP_URL, { method:'POST', body: new URLSearchParams(data) }); 
+}
+
+function showSuccessModal(msg = 'Success') {
+  const m = document.getElementById('successModal');
+  document.getElementById('successMsg').textContent = msg;
+  m.style.display = 'block';
+  setTimeout(() => { m.style.display = 'none'; }, 2000);
+}
+
+function showView(which) {
+  const map = {dashboard:'viewDashboard', material:'viewMaterial', onsite:'viewOnsite', balance:'viewBalance'};
+  ['viewDashboard','viewMaterial','viewOnsite','viewBalance'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  const targetId = map[which] || 'viewDashboard';
+  const target = document.getElementById(targetId);
+  if (target) target.style.display = 'block';
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+const userChip = document.getElementById('userNameChip');
+const btnLogout = document.getElementById('btnLogout');
+const btnNotifications = document.getElementById('btnNotifications');
+const notifBadge = document.getElementById('notifBadge');
+const notifMask = document.getElementById('notifMask');
+const btnCloseNotif = document.getElementById('btnCloseNotif');
+
+function requireLoginUI(show = true) { 
+  document.getElementById('loginMask').style.display = show ? 'flex' : 'none'; 
+}
+
+function setUserBadge(name) { 
+  userChip.textContent = name ? name : 'Signed out'; 
+  btnLogout.disabled = !name; 
+}
+
+function isAdmin() {
+  return SESSION_USERNAME && /\.ADMIN$/i.test(SESSION_USERNAME);
+}
+
+function getDefaultSite() {
+  if (!SESSION_USERNAME) return '';
+  const parts = SESSION_USERNAME.split('.');
+  if (parts.length > 1) {
+    const suffix = parts[parts.length - 1].toUpperCase();
+    return SITES.find(s => s.toUpperCase() === suffix) || '';
+  }
+  return SITES[0] || '';
+}
+
+function getTodayDate() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function getItemStatus(ordered, received) {
+  const o = parseFloat(ordered || 0);
+  const r = parseFloat(received || 0);
+  if (o === r && o > 0) return 'Completed';
+  if (o > r && r >= 1) return 'Partial';
+  return 'Pending';
+}
+
+async function doLogin() { 
+  const u = document.getElementById('loginUser').value.trim(); 
+  const p = document.getElementById('loginPass').value; 
+  const msg = document.getElementById('loginMsg'); 
+  const btnLogin = document.getElementById('btnLogin');
+  
+  if (!u || !p) {
+    msg.innerHTML = '<span class="error">Username and password required</span>';
+    return;
+  }
+  
+  msg.textContent = 'Signing in…'; 
+  btnLogin.disabled = true;
+  
+  try { 
+    const res = await postForm({mode: 'login', username: u, password: p}); 
+    const json = await res.json(); 
+    
+    if (!json || !json.ok) {
+      throw new Error(json?.error || 'Login failed'); 
+    }
+    
+    SESSION_TOKEN = json.token; 
+    SESSION_ROLE = json.user?.role || ''; 
+    SESSION_USERNAME = json.user?.username || u; 
+    
+    sessionStorage.setItem('SESSION_TOKEN', SESSION_TOKEN); 
+    sessionStorage.setItem('SESSION_USERNAME', SESSION_USERNAME); 
+    sessionStorage.setItem('SESSION_ROLE', SESSION_ROLE); 
+    
+    setUserBadge(SESSION_USERNAME); 
+    requireLoginUI(false); 
+    await loadLists();
+    setDefaultSites();
+    setupProjectSiteField();
+    setupToProjectSiteField();
+    await loadRecentTransactions();
+    await autoRecallOnsite();
+    await refreshNotifications();
+    showView('dashboard'); 
+    
+    document.getElementById('loginUser').value = '';
+    document.getElementById('loginPass').value = '';
+    msg.textContent = '';
+  } catch (err) { 
+    msg.innerHTML = '<span class="error">' + (err.message || err) + '</span>'; 
+  } finally {
+    btnLogin.disabled = false;
+  }
+}
+
+async function loadLists() {
+  if (!SESSION_TOKEN) return;
+  try {
+    const res = await fetch(WEB_APP_URL + `?mode=lists&token=${encodeURIComponent(SESSION_TOKEN)}`, {cache:'no-store'});
+    const json = await res.json();
+    if (!json || !json.ok) throw new Error('lists error');
+    
+    SITES = json.sites || [];
+    ALL_SITES = json.sitesAll || [];
+    ITEMS = json.items || [];
+    ITEM_BY_CODE = {};
+    CODE_BY_DESC = {};
+    
+    (ITEMS || []).forEach(it => {
+      const code = (it.itemCode || '').trim().toUpperCase();
+      const desc = (it.itemDescription || '').trim();
+      if (code) ITEM_BY_CODE[code] = desc;
+      if (desc) CODE_BY_DESC[desc.toUpperCase()] = it.itemCode || '';
+    });
+    
+    const dlCode = document.getElementById('allowedItemCodes');
+    if (dlCode) {
+      dlCode.innerHTML = '';
+      (ITEMS || []).forEach(it => {
+        const opt = document.createElement('option');
+        opt.value = it.itemCode || '';
+        dlCode.appendChild(opt);
+      });
+    }
+  } catch (err) {
+    console.warn('lists error:', err.message);
+  }
+}
+
+function setupProjectSiteField() {
+  const field = document.getElementById('projectSiteField');
+  if (!field || !isAdmin()) return;
+  
+  field.innerHTML = `
+    <label>Project Site *</label>
+    <select id="projectSite" required><option value="">Select a site…</option>${SITES.map(s => `<option value="${s}">${s}</option>`).join('')}</select>
+    <div class="help">Admin can select any site</div>
+  `;
+  
+  const projectSite = document.getElementById('projectSite');
+  const defaultSite = getDefaultSite();
+  if (projectSite && defaultSite) projectSite.value = defaultSite;
+}
+
+function setupToProjectSiteField() {
+  const toProjectSite = document.getElementById('toProjectSite');
+  if (!toProjectSite) return;
+  
+  // Populate with ALL available sites from Sites sheet
+  toProjectSite.innerHTML = '<option value="">Select a site…</option>' + (ALL_SITES || []).map(s => `<option value="${s}">${s}</option>`).join('');
+}
+
+function setDefaultSites() {
+  const defaultSite = getDefaultSite();
+  const projectSite = document.getElementById('projectSite');
+  const siteOn = document.getElementById('siteOn');
+  
+  if (projectSite && !isAdmin()) projectSite.value = defaultSite;
+  if (siteOn) siteOn.value = defaultSite;
+}
+
+async function loadRecentTransactions() {
+  if (!SESSION_TOKEN) return;
+  try {
+    const url = new URL(WEB_APP_URL);
+    url.searchParams.set('mode', 'recent');
+    url.searchParams.set('token', SESSION_TOKEN);
+    
+    const res = await fetch(url.toString(), {cache: 'no-store'});
+    const json = await res.json();
+    
+    if (json && json.ok) {
+      const rows = json.rows || [];
+      const recentTbl = document.querySelector('#recentTable tbody');
+      const recentMsg = document.getElementById('recentMsg');
+      
+      if (recentTbl) {
+        recentTbl.innerHTML = '';
+        if (rows.length === 0) {
+          recentMsg.textContent = 'No recent transactions yet.';
+          return;
+        }
+        
+        recentMsg.textContent = `Showing ${rows.length} most recent.`;
+        rows.forEach(r => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${r.timestamp || ''}</td><td>${r.transDate || ''}</td><td>${r.pr || ''}</td><td>${r.po || ''}</td><td>${r.dr || ''}</td><td>${r.site || ''}</td><td>${r.code || ''}</td><td>${r.desc || ''}</td><td>${r.ordered != null ? r.ordered : ''}</td><td>${r.received != null ? r.received : ''}</td><td>${r.balance != null ? r.balance : ''}</td><td>${r.itemStatus || ''}</td>`;
+          recentTbl.appendChild(tr);
+        });
+      }
+    }
+  } catch (err) {
+    console.warn('Recent transactions error:', err.message);
+  }
+}
+
+async function autoRecallOnsite() {
+  const msg = document.getElementById('recallOnsiteMsg');
+  const siteOn = (document.getElementById('siteOn').value || '').trim().toUpperCase();
+  
+  if (!SESSION_TOKEN || !siteOn) return;
+  
+  try {
+    const url = new URL(WEB_APP_URL);
+    url.searchParams.set('mode', 'onsite_tx_recall');
+    url.searchParams.set('site', siteOn);
+    url.searchParams.set('token', SESSION_TOKEN);
+    
+    const res = await fetch(url.toString(), {cache: 'no-store'});
+    const json = await res.json();
+    
+    const onsiteBody = document.querySelector('#onsiteTable tbody');
+    if (onsiteBody) {
+      onsiteBody.innerHTML = '';
+      ONSITE_BALANCES = {};
+      
+      if (json && json.ok && json.rows) {
+        const rows = json.rows;
+        rows.forEach(row => {
+          const desc = (row.itemDescription || '').toUpperCase();
+          ONSITE_BALANCES[desc] = { remaining: parseFloat(row.remaining || 0), unit: row.unit || '' };
+        });
+        addOnsiteRow();
+        msg.innerHTML = `<span class="success">Auto-loaded ${rows.length} balance item(s)</span>`;
+      } else {
+        addOnsiteRow();
+        msg.innerHTML = '<span class="help">No existing balances</span>';
+      }
+    }
+  } catch (err) {
+    console.warn('Auto-recall failed:', err.message);
+  }
+}
+
+async function refreshNotifications() {
+  if (!SESSION_TOKEN) return;
+  try {
+    const url = new URL(WEB_APP_URL);
+    url.searchParams.set('mode', 'notifications');
+    url.searchParams.set('token', SESSION_TOKEN);
+    
+    const res = await fetch(url.toString(), {cache:'no-store'});
+    const json = await res.json();
+    const rows = json.rows || [];
+    
+    const notifTbl = document.querySelector('#notifTable tbody');
+    const notifMsg = document.getElementById('notifMsg');
+    const notifDot = document.getElementById('notifDot');
+    
+    notifTbl.innerHTML = '';
+    
+    if (!rows.length) {
+      notifMsg.textContent = 'No pending transfers.';
+      notifDot.style.display = 'none';
+      notifBadge.style.display = 'none';
+      return;
+    }
+    
+    notifMsg.textContent = `${rows.length} pending transfer${rows.length > 1 ? 's' : ''}.`;
+    notifDot.style.display = 'inline-block';
+    notifBadge.textContent = rows.length;
+    notifBadge.style.display = 'inline-flex';
+    
+    rows.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${r.createdAt || ''}</td><td>${r.fromSite || ''}</td><td>${r.toSite || ''}</td><td>${r.description || ''}</td><td>${r.qty || ''}</td><td>${r.unit || ''}</td><td>${r.docType || ''}</td><td><button class="btn small" onclick="acceptTransfer('${r.id}')">Accept</button></td>`;
+      notifTbl.appendChild(tr);
+    });
+  } catch (e) {
+    console.warn('Notifications error:', e);
+  }
+}
+
+async function acceptTransfer(id) {
+  if (!SESSION_TOKEN) return;
+  try {
+    const res = await postForm({mode: 'transfer_accept', token: SESSION_TOKEN, id: id});
+    const json = await res.json();
+    if (json && json.ok) {
+      showSuccessModal('Transfer Accepted!');
+      await refreshNotifications();
+    } else {
+      alert(json?.error || 'Failed');
+    }
+  } catch (err) {
+    alert('Error: ' + (err.message || err));
+  }
+}
+
+async function recallPRData() {
+  const prNumber = document.getElementById('prNumber').value.trim().toUpperCase();
+  const projectSiteEl = document.getElementById('projectSite');
+  const projectSite = (projectSiteEl.tagName === 'SELECT' ? projectSiteEl.value : projectSiteEl.value).trim().toUpperCase();
+  const recallMsg = document.getElementById('recallMsg');
+  
+  if (!SESSION_TOKEN || !prNumber || !projectSite) {
+    recallMsg.innerHTML = '';
+    return;
+  }
+  
+  try {
+    const url = new URL(WEB_APP_URL);
+    url.searchParams.set('mode', 'recall');
+    url.searchParams.set('token', SESSION_TOKEN);
+    url.searchParams.set('pr', prNumber);
+    url.searchParams.set('site', projectSite);
+    
+    const res = await fetch(url.toString(), {cache: 'no-store'});
+    const json = await res.json();
+    
+    if (json && json.ok && json.items && json.items.length > 0) {
+      const itemsBody = document.querySelector('#itemsTable tbody');
+      itemsBody.innerHTML = '';
+      
+      json.items.forEach(it => {
+        const status = String(it.itemStatus || it.status || getItemStatus(it.qtyOrdered, it.qtyReceived));
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><input type="text" class="item-code" placeholder="Code" value="${it.itemCode || ''}" list="allowedItemCodes" /></td>
+          <td><input type="text" class="item-desc" placeholder="Description (auto)" value="${it.itemDescription || ''}" /></td>
+          <td><input type="number" class="qty-ordered" min="0" step="0.01" placeholder="0" value="${it.qtyOrdered || 0}" /></td>
+          <td><input type="number" class="qty-received" min="0" step="0.01" placeholder="0" value="${it.qtyReceived || 0}" /></td>
+          <td><input type="number" class="item-balance" min="0" step="0.01" placeholder="0" value="${it.balanceQty || (it.qtyOrdered - it.qtyReceived) || 0}" disabled /></td>
+          <td><span class="badge pending">${status}</span></td>
+          <td><button type="button" class="btn danger small">Remove</button></td>
+        `;
+        
+        const statusBadge = tr.querySelector('.badge');
+        const orderedInput = tr.querySelector('.qty-ordered');
+        const receivedInput = tr.querySelector('.qty-received');
+        const balanceInput = tr.querySelector('.item-balance');
+        
+        function recalcBalance() {
+          const ord = parseFloat(orderedInput.value || 0);
+          const rec = parseFloat(receivedInput.value || 0);
+          const bal = isFinite(ord) && isFinite(rec) ? ord - rec : 0;
+          balanceInput.value = bal.toFixed(2);
+          const newStatus = getItemStatus(ord, rec);
+          updateStatusBadge(statusBadge, newStatus);
+        }
+        
+        orderedInput.addEventListener('input', recalcBalance);
+        receivedInput.addEventListener('input', recalcBalance);
+        tr.querySelector('button').addEventListener('click', () => tr.remove());
+        
+        document.querySelector('#itemsTable tbody').appendChild(tr);
+      });
+      
+      if (json.commonPO) document.getElementById('poNumber').value = json.commonPO;
+      if (json.commonDR) document.getElementById('drNumber').value = json.commonDR;
+      
+      recallMsg.innerHTML = `<span class="success">✓ Loaded ${json.items.length} item(s)</span>`;
+    } else {
+      recallMsg.innerHTML = '<span class="help">No items found for PR: ' + prNumber + '</span>';
+    }
+  } catch (err) {
+    console.warn('PR recall error:', err.message);
+    recallMsg.innerHTML = '<span class="error">Recall failed: ' + err.message + '</span>';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Login
+  const btnLogin = document.getElementById('btnLogin');
+  const loginUser = document.getElementById('loginUser');
+  const loginPass = document.getElementById('loginPass');
+  
+  if (btnLogin) btnLogin.addEventListener('click', (e) => { e.preventDefault(); doLogin(); });
+  if (loginUser) loginUser.addEventListener('keypress', (e) => { if (e.key === 'Enter') doLogin(); });
+  if (loginPass) loginPass.addEventListener('keypress', (e) => { if (e.key === 'Enter') doLogin(); });
+  
+  // Logout
+  if (btnLogout) btnLogout.addEventListener('click', async () => {
+    try { await postForm({mode: 'logout', token: SESSION_TOKEN}); } catch (e) {}
+    sessionStorage.clear();
+    SESSION_TOKEN = null;
+    setUserBadge(null);
+    requireLoginUI(true);
+    showView('dashboard');
+  });
+  
+  // Notifications
+  if (btnNotifications) btnNotifications.addEventListener('click', () => { notifMask.style.display = 'flex'; });
+  if (btnCloseNotif) btnCloseNotif.addEventListener('click', () => { notifMask.style.display = 'none'; });
+  
+  // Brand
+  const brandLink = document.getElementById('brandLink');
+  if (brandLink) brandLink.addEventListener('click', (e) => { e.preventDefault(); showView('dashboard'); });
+  
+  // Dates
+  const transDate = document.getElementById('transDate');
+  if (transDate) transDate.value = getTodayDate();
+  const invDate = document.getElementById('invDate');
+  if (invDate) invDate.value = getTodayDate();
+  
+  // Session
+  SESSION_TOKEN = sessionStorage.getItem('SESSION_TOKEN');
+  SESSION_USERNAME = sessionStorage.getItem('SESSION_USERNAME') || '';
+  SESSION_ROLE = sessionStorage.getItem('SESSION_ROLE') || '';
+  
+  if (SESSION_TOKEN) {
+    setUserBadge(SESSION_USERNAME);
+    requireLoginUI(false);
+    loadLists().then(() => {
+      setDefaultSites();
+      setupProjectSiteField();
+      setupToProjectSiteField();
+      loadRecentTransactions();
+      autoRecallOnsite();
+      refreshNotifications();
+    });
+    showView('dashboard');
+  } else {
+    setUserBadge(null);
+    requireLoginUI(true);
+  }
+  
+  // Add rows
+  const addRowBtn = document.getElementById('addRowBtn');
+  if (addRowBtn) addRowBtn.addEventListener('click', addMaterialRow);
+  const addOnsiteRowBtn = document.getElementById('addOnsiteRowBtn');
+  if (addOnsiteRowBtn) addOnsiteRowBtn.addEventListener('click', addOnsiteRow);
+  const btnBalSearch = document.getElementById('btnBalSearch');
+  if (btnBalSearch) btnBalSearch.addEventListener('click', runBalanceSearch);
+  
+  // PR Recall on blur/change
+  const prNumberInput = document.getElementById('prNumber');
+  if (prNumberInput) {
+    prNumberInput.addEventListener('blur', recallPRData);
+    prNumberInput.addEventListener('change', recallPRData);
+  }
+  
+  addMaterialRow();
+  addOnsiteRow();
+  
+  // Forms
+  const invForm = document.getElementById('invForm');
+  if (invForm) {
+    invForm.addEventListener('submit', async (e) => { e.preventDefault(); await submitMaterialForm(); });
+    invForm.addEventListener('reset', () => {
+      setTimeout(() => {
+        const td = document.getElementById('transDate');
+        if (td) td.value = getTodayDate();
+        setDefaultSites();
+      }, 0);
+    });
+  }
+  
+  const onsiteForm = document.getElementById('onsiteForm');
+  if (onsiteForm) {
+    onsiteForm.addEventListener('submit', async (e) => { e.preventDefault(); await submitOnsiteForm(); });
+    onsiteForm.addEventListener('reset', () => {
+      setTimeout(() => {
+        const id = document.getElementById('invDate');
+        if (id) id.value = getTodayDate();
+        const toSite = document.getElementById('toProjectSite');
+        if (toSite) toSite.value = '';
+        const docType = document.getElementById('docTypeField');
+        if (docType) docType.value = '';
+        const docNum = document.getElementById('docNumber');
+        if (docNum) docNum.value = '';
+        setDefaultSites();
+        SELECTED_FILES = [];
+      }, 0);
+    });
+  }
+  
+  // Mode toggle
+  document.querySelectorAll('input[name="modeIO"]').forEach(radio => {
+    radio.addEventListener('change', updateModeState);
+  });
+  
+  // Auto-refresh
+  setInterval(() => {
+    if (SESSION_TOKEN) refreshNotifications();
+  }, 10000);
+});
+
+function updateModeState() {
+  const mode = document.querySelector('input[name="modeIO"]:checked').value;
+  const thIn = document.getElementById('thIn');
+  const thOut = document.getElementById('thOut');
+  const rows = document.querySelectorAll('#onsiteTable tbody tr');
+  
+  if (mode === 'IN') {
+    if (thIn) thIn.style.opacity = '1';
+    if (thOut) thOut.style.opacity = '0.45';
+  } else {
+    if (thIn) thIn.style.opacity = '0.45';
+    if (thOut) thOut.style.opacity = '1';
+  }
+  
+  rows.forEach(row => {
+    const inInput = row.querySelector('.onsite-in');
+    const outInput = row.querySelector('.onsite-out');
+    
+    if (mode === 'IN') {
+      inInput.disabled = false;
+      inInput.classList.remove('locked');
+      outInput.disabled = true;
+      outInput.classList.add('locked');
+      outInput.value = '0';
+    } else {
+      outInput.disabled = false;
+      outInput.classList.remove('locked');
+      inInput.disabled = true;
+      inInput.classList.add('locked');
+      inInput.value = '0';
+    }
+  });
+}
+
+function updateStatusBadge(badge, status) {
+  badge.className = 'badge';
+  badge.classList.add(status === 'Completed' ? 'complete' : status === 'Partial' ? 'partial' : 'pending');
+  badge.textContent = status;
+}
+
+function addMaterialRow() {
+  const itemsBody = document.querySelector('#itemsTable tbody');
+  if (!itemsBody) return;
+  
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input type="text" class="item-code" placeholder="Code" list="allowedItemCodes" /></td>
+    <td><input type="text" class="item-desc" placeholder="Description (auto)" /></td>
+    <td><input type="number" class="qty-ordered" min="0" step="0.01" placeholder="0" /></td>
+    <td><input type="number" class="qty-received" min="0" step="0.01" placeholder="0" /></td>
+    <td><input type="number" class="item-balance" min="0" step="0.01" placeholder="0" disabled /></td>
+    <td><span class="badge pending">Pending</span></td>
+    <td><button type="button" class="btn danger small">Remove</button></td>
+  `;
+  
+  const codeInput = tr.querySelector('.item-code');
+  const descInput = tr.querySelector('.item-desc');
+  const orderedInput = tr.querySelector('.qty-ordered');
+  const receivedInput = tr.querySelector('.qty-received');
+  const balanceInput = tr.querySelector('.item-balance');
+  const statusBadge = tr.querySelector('.badge');
+  
+  codeInput.addEventListener('change', function() {
+    const code = this.value.trim().toUpperCase();
+    this.value = code;
+    if (code && ITEM_BY_CODE[code]) {
+      descInput.value = ITEM_BY_CODE[code].toUpperCase();
+    }
+  });
+  
+  descInput.addEventListener('change', function() {
+    this.value = this.value.toUpperCase();
+  });
+  
+  function recalcBalance() {
+    const ord = parseFloat(orderedInput.value || 0);
+    const rec = parseFloat(receivedInput.value || 0);
+    const bal = isFinite(ord) && isFinite(rec) ? ord - rec : 0;
+    balanceInput.value = bal.toFixed(2);
+    const status = getItemStatus(ord, rec);
+    updateStatusBadge(statusBadge, status);
+  }
+  
+  orderedInput.addEventListener('input', recalcBalance);
+  receivedInput.addEventListener('input', recalcBalance);
+  tr.querySelector('button').addEventListener('click', () => tr.remove());
+  
+  itemsBody.appendChild(tr);
+}
+
+function addOnsiteRow() {
+  const onsiteBody = document.querySelector('#onsiteTable tbody');
+  if (!onsiteBody) return;
+  
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input type="text" class="onsite-desc" placeholder="Description" list="onsitePredictDescs" /></td>
+    <td><input type="number" class="onsite-in" min="0" step="0.01" placeholder="0" /></td>
+    <td><input type="number" class="onsite-out" min="0" step="0.01" placeholder="0" /></td>
+    <td><input type="number" class="onsite-rem" min="0" step="0.01" placeholder="0" disabled /></td>
+    <td><input type="text" class="onsite-unit" placeholder="Unit" /></td>
+    <td><button type="button" class="btn danger small">Remove</button></td>
+  `;
+  
+  const descInput = tr.querySelector('.onsite-desc');
+  const remInput = tr.querySelector('.onsite-rem');
+  const unitInput = tr.querySelector('.onsite-unit');
+  const inInput = tr.querySelector('.onsite-in');
+  const outInput = tr.querySelector('.onsite-out');
+  
+  descInput.addEventListener('change', function() {
+    const val = this.value.toUpperCase();
+    this.value = val;
+    if (ONSITE_BALANCES[val]) {
+      unitInput.value = ONSITE_BALANCES[val].unit;
+    }
+    calcRemaining();
+  });
+  
+  descInput.addEventListener('input', async function() {
+    const val = this.value.trim().toUpperCase();
+    if (val.length > 1 && SESSION_TOKEN) {
+      try {
+        const url = new URL(WEB_APP_URL);
+        url.searchParams.set('mode', 'onsite_tx_predict_desc');
+        url.searchParams.set('token', SESSION_TOKEN);
+        url.searchParams.set('q', val);
+        url.searchParams.set('max', '50');
+        const res = await fetch(url.toString(), {cache: 'no-store'});
+        const json = await res.json();
+        const dl = document.getElementById('onsitePredictDescs');
+        dl.innerHTML = '';
+        (json.suggestions || []).forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s;
+          dl.appendChild(opt);
+        });
+      } catch (e) {}
+    }
+  });
+  
+  unitInput.addEventListener('change', function() { this.value = this.value.toUpperCase(); });
+  
+  function calcRemaining() {
+    const desc = descInput.value.toUpperCase();
+    const prev = ONSITE_BALANCES[desc] ? ONSITE_BALANCES[desc].remaining : 0;
+    const inVal = parseFloat(inInput.value || 0);
+    const outVal = parseFloat(outInput.value || 0);
+    const rem = Math.abs(prev + (isFinite(inVal) ? inVal : 0) - (isFinite(outVal) ? outVal : 0));
+    remInput.value = rem.toFixed(2);
+  }
+  
+  inInput.addEventListener('input', calcRemaining);
+  outInput.addEventListener('input', calcRemaining);
+  
+  tr.querySelector('button').addEventListener('click', () => tr.remove());
+  
+  const mode = document.querySelector('input[name="modeIO"]:checked').value;
+  if (mode === 'IN') {
+    outInput.disabled = true;
+    outInput.classList.add('locked');
+  } else {
+    inInput.disabled = true;
+    inInput.classList.add('locked');
+  }
+  
+  onsiteBody.appendChild(tr);
+}
+
+async function submitMaterialForm() {
+  const formMsg = document.getElementById('formMsg');
+  const projectSiteEl = document.getElementById('projectSite');
+  const projectSite = (projectSiteEl.tagName === 'SELECT' ? projectSiteEl.value : projectSiteEl.value).trim().toUpperCase();
+  const prNumber = document.getElementById('prNumber').value.trim().toUpperCase();
+  const poNumber = document.getElementById('poNumber').value.trim().toUpperCase();
+  const drNumber = document.getElementById('drNumber').value.trim().toUpperCase();
+  const docStatus = document.getElementById('docStatus').value.trim();
+  
+  if (!SESSION_TOKEN) { formMsg.innerHTML = '<span class="error">Session expired</span>'; return; }
+  if (!projectSite || !prNumber) { formMsg.innerHTML = '<span class="error">Project Site and PR Number required</span>'; return; }
+  
+  const itemsBody = document.querySelector('#itemsTable tbody');
+  const rows = itemsBody?.querySelectorAll('tr') || [];
+  if (rows.length === 0) { formMsg.innerHTML = '<span class="error">Add at least one material row</span>'; return; }
+  
+  const items = [];
+  for (const row of rows) {
+    const code = row.querySelector('.item-code')?.value.trim().toUpperCase() || '';
+    const desc = row.querySelector('.item-desc')?.value.trim().toUpperCase() || '';
+    const ord = parseFloat(row.querySelector('.qty-ordered')?.value || 0);
+    const rec = parseFloat(row.querySelector('.qty-received')?.value || 0);
+    const bal = parseFloat(row.querySelector('.item-balance')?.value || 0);
+    
+    if (!code && !desc) continue;
+    items.push({
+      itemCode: code, 
+      itemDescription: desc, 
+      qtyOrdered: isFinite(ord) ? ord : 0, 
+      qtyReceived: isFinite(rec) ? rec : 0, 
+      balanceQty: isFinite(bal) ? bal : 0, 
+      status: getItemStatus(ord, rec)
+    });
+  }
+  
+  if (items.length === 0) { formMsg.innerHTML = '<span class="error">Please fill at least one item</span>'; return; }
+  
+  formMsg.textContent = 'Submitting…';
+  
+  try {
+    const res = await postForm({mode: '', token: SESSION_TOKEN, projectSite, prNumber, poNumber, drNumber, docStatus, items: JSON.stringify(items)});
+    const json = await res.json();
+    if (json && json.ok) {
+      showSuccessModal(`Saved! Inserted: ${json.inserted || 0}, Updated: ${json.updated || 0}`);
+      document.getElementById('invForm')?.reset();
+      itemsBody.innerHTML = '';
+      addMaterialRow();
+      setDefaultSites();
+      await loadRecentTransactions();
+      formMsg.textContent = '';
+    } else {
+      formMsg.innerHTML = '<span class="error">' + (json?.error || 'Unknown error') + '</span>';
+    }
+  } catch (err) {
+    formMsg.innerHTML = '<span class="error">Submit failed: ' + (err.message || err) + '</span>';
+  }
+}
+
+async function submitOnsiteForm() {
+  const onsiteMsg = document.getElementById('onsiteMsg');
+  const siteOn = document.getElementById('siteOn').value.trim().toUpperCase();
+  const invDate = document.getElementById('invDate').value.trim();
+  const toProjectSite = document.getElementById('toProjectSite').value.trim().toUpperCase();
+  const docType = document.getElementById('docTypeField').value.trim();
+  const docNumber = document.getElementById('docNumber').value.trim().toUpperCase();
+  
+  if (!SESSION_TOKEN) { onsiteMsg.innerHTML = '<span class="error">Session expired</span>'; return; }
+  if (!siteOn || !invDate) { onsiteMsg.innerHTML = '<span class="error">Site and Date required</span>'; return; }
+  if (!toProjectSite) { onsiteMsg.innerHTML = '<span class="error">TO PROJECT SITE is required</span>'; return; }
+  if (!docType) { onsiteMsg.innerHTML = '<span class="error">Document Type is required</span>'; return; }
+  if (!docNumber) { onsiteMsg.innerHTML = '<span class="error">Document Number is required</span>'; return; }
+  
+  const onsiteBody = document.querySelector('#onsiteTable tbody');
+  const rows = onsiteBody?.querySelectorAll('tr') || [];
+  if (rows.length === 0) { onsiteMsg.innerHTML = '<span class="error">Add at least one item</span>'; return; }
+  
+  const mode = document.querySelector('input[name="modeIO"]:checked')?.value || 'IN';
+  const items = [];
+  
+  for (const row of rows) {
+    const desc = row.querySelector('.onsite-desc')?.value.trim().toUpperCase() || '';
+    const inQty = parseFloat(row.querySelector('.onsite-in')?.value || 0);
+    const outQty = parseFloat(row.querySelector('.onsite-out')?.value || 0);
+    const unit = row.querySelector('.onsite-unit')?.value.trim().toUpperCase() || '';
+    
+    if (!desc) continue;
+    
+    items.push({itemDescription: desc, inQty: mode === 'IN' ? inQty : 0, outQty: mode === 'OUT' ? outQty : 0, unit, issuedTo: toProjectSite, docType: docType});
+  }
+  
+  if (items.length === 0) { onsiteMsg.innerHTML = '<span class="error">Please fill at least one item</span>'; return; }
+  
+  onsiteMsg.textContent = 'Submitting…';
+  
+  try {
+    const res = await postForm({mode: 'onsite_tx_upsert', token: SESSION_TOKEN, projectSite: siteOn, inventoryDate: invDate, documentNumber: docNumber, items: JSON.stringify(items)});
+    const json = await res.json();
+    if (json && json.ok) {
+      showSuccessModal(`Saved! Inserted: ${json.inserted || 0}, Updated: ${json.updated || 0}`);
+      document.getElementById('onsiteForm')?.reset();
+      onsiteBody.innerHTML = '';
+      ONSITE_BALANCES = {};
+      SELECTED_FILES = [];
+      await autoRecallOnsite();
+      setDefaultSites();
+      await refreshNotifications();
+      onsiteMsg.textContent = '';
+    } else {
+      onsiteMsg.innerHTML = '<span class="error">' + (json?.error || 'Unknown error') + '</span>';
+    }
+  } catch (err) {
+    onsiteMsg.innerHTML = '<span class="error">Submit failed: ' + (err.message || err) + '</span>';
+  }
+}
+
+async function runBalanceSearch() {
+  const balMsg = document.getElementById('balMsg');
+  const balDesc = document.getElementById('balDesc').value.trim().toUpperCase();
+  const balTable = document.querySelector('#balTable tbody');
+  
+  if (!SESSION_TOKEN) { balMsg.innerHTML = '<span class="error">Session expired</span>'; return; }
+  if (!balDesc) { balMsg.innerHTML = '<span class="error">Description required</span>'; return; }
+  
+  balMsg.textContent = 'Searching…';
+  balTable.innerHTML = '';
+  
+  try {
+    const url = new URL(WEB_APP_URL);
+    url.searchParams.set('mode', 'onsite_balance_search');
+    url.searchParams.set('token', SESSION_TOKEN);
+    url.searchParams.set('q', balDesc);
+    
+    const res = await fetch(url.toString(), {cache: 'no-store'});
+    const json = await res.json();
+    
+    if (json && json.ok) {
+      const rows = json.rows || [];
+      if (rows.length === 0) { balMsg.textContent = 'No matches found'; return; }
+      
+      balMsg.textContent = `${rows.length} result(s) found`;
+      rows.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${row.date || ''}</td><td>${row.site || ''}</td><td>${row.description || ''}</td><td>${row.remaining != null ? row.remaining.toFixed(2) : ''}</td><td>${row.unit || ''}</td>`;
+        balTable.appendChild(tr);
+      });
+    } else {
+      balMsg.innerHTML = '<span class="error">' + (json?.error || 'Search failed') + '</span>';
+    }
+  } catch (err) {
+    balMsg.innerHTML = '<span class="error">Search failed: ' + (err.message || err) + '</span>';
+  }
+}
+</script>
+
+</body>
+</html>
