@@ -43,13 +43,6 @@
  input,select,textarea{width:100%;background:#0b1220;color:#e5e7eb;border:1px solid var(--border);border-radius:10px;padding:10px 12px;text-transform:uppercase}
  input:disabled,select:disabled{opacity:0.6;cursor:not-allowed}
  input.locked{background:rgba(239,68,68,.08)}
- select{appearance:none;padding-right:30px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 9L1 4h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
- .input-wrapper{position:relative}
- .suggestions-dropdown{position:absolute;background:#0b1220;border:1px solid var(--border);border-radius:8px;max-height:200px;overflow-y:auto;z-index:100;width:100%;margin-top:2px;display:none;top:100%}
- .suggestions-dropdown.show{display:block}
- .suggestion-item{padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:.9rem;text-transform:uppercase}
- .suggestion-item:hover{background:rgba(59,130,246,.2)}
- .suggestion-item:last-child{border-bottom:none}
  table{width:100%;border-collapse:collapse}
  th,td{padding:8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
  thead th{font-size:.85rem;color:var(--muted);font-weight:600}
@@ -71,12 +64,29 @@
  .success-modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#0b1220;border:2px solid var(--accent);border-radius:12px;padding:24px;text-align:center;z-index:4000;min-width:300px}
  .success-modal h2{margin:0 0 10px 0;color:var(--accent)}
  .success-modal p{margin:0;color:var(--text)}
+ .predictions{position:absolute;background:#0b1220;border:1px solid var(--border);border-radius:8px;max-height:200px;overflow-y:auto;z-index:100;width:90%;margin-top:2px}
+ .prediction-item{padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border)}
+ .prediction-item:hover{background:rgba(59,130,246,.2)}
+ .file-upload-section{background:rgba(59,130,246,.1);border:1px dashed var(--blue);border-radius:10px;padding:16px;margin-top:12px}
+ .file-input-wrapper{position:relative;overflow:hidden;display:inline-block;width:100%}
+ .file-input-wrapper input[type=file]{position:absolute;left:-9999px}
+ .file-input-label{display:inline-flex;align-items:center;gap:8px;background:var(--blue);color:#fff;border-radius:10px;padding:10px 14px;cursor:pointer;font-weight:600;width:100%;justify-content:center;transition:background 0.2s}
+ .file-input-label:hover{background:#2563eb}
+ .file-input-wrapper.dragover .file-input-label{background:#1d4ed8;opacity:0.8}
+ .file-preview{margin-top:12px;padding:12px;background:rgba(59,130,246,.05);border:1px solid var(--border);border-radius:10px;display:none}
+ .file-preview.active{display:block}
+ .file-preview-item{display:flex;align-items:center;justify-content:space-between;padding:8px;background:rgba(59,130,246,.1);border-radius:8px;margin-bottom:8px}
+ .file-preview-item:last-child{margin-bottom:0}
+ .file-preview-name{font-size:.9rem;color:var(--text)}
+ .file-preview-size{font-size:.8rem;color:var(--muted)}
+ .remove-file-btn{background:var(--danger);color:#fff;border:none;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:.85rem}
+ .remove-file-btn:hover{background:#dc2626}
 </style>
 </head>
 <body>
 <header class="appbar">
  <div class="appbar-inner">
-  <a id="brandLink" class="brand" href="#">Construction Inventory — V65.2</a>
+  <a id="brandLink" class="brand" href="#">Construction Inventory — V64</a>
   <div class="right">
    <button id="btnNotifications" class="btn small secondary">
      🔔
@@ -145,11 +155,11 @@
  <!-- DASHBOARD -->
  <section id="viewDashboard" class="card">
   <h2 style="margin:6px 0 10px">📊 Dashboard</h2>
-  <div class="help">Welcome. Use the modules below.</div>
+  <div class="help">Welcome! This app is designed to help us manage all the document needed in every project site while enabling seamless, paperless transactions.</div>
   <div class="grid grid-3" style="margin-top:8px">
    <div class="card"><h3> 📥 Material Input</h3><div class="help">PR Input with code predictions & auto-fill</div><div style="margin-top:10px"><button class="btn" onclick="showView('material')">Open</button></div></div>
-   <div class="card"><h3> 📦 On‑site Inventory</h3><div class="help">IN/OUT with auto-recall balances & units</div><div style="margin-top:10px"><button class="btn" onclick="showView('onsite')">Open</button></div></div>
-   <div class="card"><h3> 🔍 Balance Search</h3><div class="help">Query inventory with suggestions</div><div style="margin-top:10px"><button class="btn" onclick="showView('balance')">Open</button></div></div>
+   <div class="card"><h3> 📦 On‑site Inventory</h3><div class="help">IN/OUT with auto-recall balances</div><div style="margin-top:10px"><button class="btn" onclick="showView('onsite')">Open</button></div></div>
+   <div class="card"><h3> 🔍 Balance Search</h3><div class="help">Query inventory</div><div style="margin-top:10px"><button class="btn" onclick="showView('balance')">Open</button></div></div>
   </div>
  </section>
 
@@ -206,7 +216,7 @@
    <h2 style="margin-top:0">📦On‑site Material Inventory</h2>
    <div class="grid" style="grid-template-columns:1fr 1fr">
     <div><label>Inventory Date</label><input type="date" id="invDate" /><div class="help"></div></div>
-    <div><label>Project Site</label><input type="text" id="siteOn" disabled /><div class="help"></div></div>
+    <div id="siteOnField"><label>Project Site</label><input type="text" id="siteOn" disabled /><div class="help"></div></div>
     <div><label>TO PROJECT SITE *</label><select id="toProjectSite" required><option value="">Select a site…</option></select><div class="help"></div></div>
     <div><label>Doc Type *</label><select id="docTypeField" required><option value="">Select Doc Type…</option><option value="STS">STS</option><option value="RR">RR</option><option value="Goods Issue">Goods Issue</option></select><div class="help">Required field</div></div>
     <div><label>Document Number *</label><input type="text" id="docNumber" placeholder="DOC-0001" required /><div class="help">Required field</div></div>
@@ -218,12 +228,11 @@
    <div id="recallOnsiteMsg" class="help" style="margin:10px 0"></div>
    <div class="scroll-x" style="margin-top:8px">
     <table id="onsiteTable"><thead><tr>
-     <th style="min-width:260px">Description *</th>
+     <th style="min-width:260px">Description</th>
      <th id="thIn" style="min-width:110px">IN Qty *</th>
      <th id="thOut" style="min-width:110px">OUT Qty *</th>
-     <th style="min-width:140px">Prev. Remaining</th>
-     <th style="min-width:140px">Projected</th>
-     <th style="min-width:140px">Unit *</th>
+     <th style="min-width:160px">Remaining</th>
+     <th style="min-width:120px">Unit *</th>
      <th></th>
     </tr></thead><tbody></tbody></table>
    </div>
@@ -237,15 +246,11 @@
  <section id="viewBalance" class="view">
   <div class="card">
    <h2 style="margin-top:0">🔍 Balance Search</h2>
-   <div class="help">Search by Description across all sites with automatic suggestions.</div>
+   <div class="help">Search by Description across all sites.</div>
    <div class="grid" style="grid-template-columns:1fr auto;align-items:end;gap:10px;margin-top:8px">
     <div>
      <label>Description</label>
-     <div class="input-wrapper">
-      <input id="balDesc" type="text" placeholder="TYPE TO SEARCH" />
-      <div id="balPredictDropdown" class="suggestions-dropdown"></div>
-     </div>
-     <div class="help" style="margin-top:4px">Type to see suggestions, press Enter or click to search</div>
+     <input id="balDesc" type="text" placeholder="TYPE TO SEARCH" list="balPredictDescs" />
     </div>
     <div>
      <button class="btn" id="btnBalSearch" type="button">Search</button>
@@ -271,7 +276,7 @@
 <datalist id="onsitePredictDescs"></datalist>
 
 <script>
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxEckmCot07FXftDxSQbpiD1nuf_Aik7-gFe9Cn2KHEjE9C8Yu9Y0ItuPxwOSeBgd0oGQ/exec';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwD2kccYYVARx8J3rl-TF6CHgnZZZFCyAv1GjFQOU6yC40k9jiS9LF_zA_l6ovHZdOW/exec';
 
 let SESSION_TOKEN = null;
 let SESSION_ROLE = '';
@@ -283,7 +288,6 @@ let ITEM_BY_CODE = {};
 let CODE_BY_DESC = {};
 let ONSITE_BALANCES = {};
 let SELECTED_FILES = [];
-let ALL_BALANCE_DESCRIPTIONS = [];
 
 function postForm(data) { 
   return fetch(WEB_APP_URL, { method:'POST', body: new URLSearchParams(data) }); 
@@ -454,6 +458,7 @@ function setupToProjectSiteField() {
   const toProjectSite = document.getElementById('toProjectSite');
   if (!toProjectSite) return;
   
+  // Populate with ALL available sites from Sites sheet
   toProjectSite.innerHTML = '<option value="">Select a site…</option>' + (ALL_SITES || []).map(s => `<option value="${s}">${s}</option>`).join('');
 }
 
@@ -520,18 +525,13 @@ async function autoRecallOnsite() {
     if (onsiteBody) {
       onsiteBody.innerHTML = '';
       ONSITE_BALANCES = {};
-      ALL_BALANCE_DESCRIPTIONS = [];
       
       if (json && json.ok && json.rows) {
         const rows = json.rows;
         rows.forEach(row => {
           const desc = (row.itemDescription || '').toUpperCase();
           ONSITE_BALANCES[desc] = { remaining: parseFloat(row.remaining || 0), unit: row.unit || '' };
-          if (!ALL_BALANCE_DESCRIPTIONS.includes(desc)) {
-            ALL_BALANCE_DESCRIPTIONS.push(desc);
-          }
         });
-        ALL_BALANCE_DESCRIPTIONS.sort();
         addOnsiteRow();
         msg.innerHTML = `<span class="success">Auto-loaded ${rows.length} balance item(s)</span>`;
       } else {
@@ -541,26 +541,6 @@ async function autoRecallOnsite() {
     }
   } catch (err) {
     console.warn('Auto-recall failed:', err.message);
-  }
-}
-
-async function loadAllBalanceDescriptions() {
-  if (!SESSION_TOKEN) return;
-  try {
-    const url = new URL(WEB_APP_URL);
-    url.searchParams.set('mode', 'onsite_balance_predict_desc');
-    url.searchParams.set('token', SESSION_TOKEN);
-    url.searchParams.set('q', '');
-    url.searchParams.set('max', '500');
-    
-    const res = await fetch(url.toString(), {cache: 'no-store'});
-    const json = await res.json();
-    
-    if (json && json.ok && json.suggestions) {
-      ALL_BALANCE_DESCRIPTIONS = json.suggestions.sort();
-    }
-  } catch (err) {
-    console.warn('Failed to load all balance descriptions:', err.message);
   }
 }
 
@@ -739,7 +719,6 @@ document.addEventListener('DOMContentLoaded', function() {
       setupToProjectSiteField();
       loadRecentTransactions();
       autoRecallOnsite();
-      loadAllBalanceDescriptions();
       refreshNotifications();
     });
     showView('dashboard');
@@ -762,76 +741,6 @@ document.addEventListener('DOMContentLoaded', function() {
     prNumberInput.addEventListener('blur', recallPRData);
     prNumberInput.addEventListener('change', recallPRData);
   }
-  
-  // ========== IMPROVED BALANCE SEARCH WITH AUTO DROPDOWN ==========
-  const balDesc = document.getElementById('balDesc');
-  const balPredictDropdown = document.getElementById('balPredictDropdown');
-  
-  if (balDesc) {
-    balDesc.addEventListener('input', async function() {
-      const query = this.value.trim().toUpperCase();
-      
-      if (!query || query.length === 0) {
-        balPredictDropdown.classList.remove('show');
-        return;
-      }
-      
-      // Fetch suggestions dynamically from server
-      try {
-        const url = new URL(WEB_APP_URL);
-        url.searchParams.set('mode', 'onsite_balance_predict_desc');
-        url.searchParams.set('token', SESSION_TOKEN);
-        url.searchParams.set('q', query);
-        url.searchParams.set('max', '100');
-        
-        const res = await fetch(url.toString(), {cache: 'no-store'});
-        const json = await res.json();
-        
-        if (json && json.ok && json.suggestions) {
-          const matches = json.suggestions.slice(0, 100);
-          
-          if (matches.length === 0) {
-            balPredictDropdown.classList.remove('show');
-            return;
-          }
-          
-          balPredictDropdown.innerHTML = '';
-          matches.forEach(match => {
-            const item = document.createElement('div');
-            item.className = 'suggestion-item';
-            item.textContent = match;
-            item.addEventListener('click', () => {
-              balDesc.value = match;
-              balPredictDropdown.classList.remove('show');
-              // Auto-search when user selects from dropdown
-              runBalanceSearch();
-            });
-            balPredictDropdown.appendChild(item);
-          });
-          
-          balPredictDropdown.classList.add('show');
-        }
-      } catch (err) {
-        console.warn('Balance predict error:', err);
-      }
-    });
-    
-    balDesc.addEventListener('blur', () => {
-      setTimeout(() => {
-        balPredictDropdown.classList.remove('show');
-      }, 100);
-    });
-    
-    // Allow Enter key to trigger search
-    balDesc.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        balPredictDropdown.classList.remove('show');
-        runBalanceSearch();
-      }
-    });
-  }
-  // ========== END IMPROVED BALANCE SEARCH ==========
   
   addMaterialRow();
   addOnsiteRow();
@@ -896,8 +805,6 @@ function updateModeState() {
   rows.forEach(row => {
     const inInput = row.querySelector('.onsite-in');
     const outInput = row.querySelector('.onsite-out');
-    const prevRemInput = row.querySelector('.onsite-prev-rem');
-    const projectedInput = row.querySelector('.onsite-projected');
     
     if (mode === 'IN') {
       inInput.disabled = false;
@@ -912,24 +819,6 @@ function updateModeState() {
       inInput.classList.add('locked');
       inInput.value = '0';
     }
-    
-    const calcProjected = () => {
-      const prevRem = parseFloat(prevRemInput?.value || 0);
-      const inVal = parseFloat(inInput.value || 0);
-      const outVal = parseFloat(outInput.value || 0);
-      
-      let projected = prevRem;
-      if (mode === 'IN') {
-        projected = prevRem + inVal;
-      } else if (mode === 'OUT') {
-        projected = prevRem - outVal;
-      }
-      
-      if (projected < 0) projected = 0;
-      if (projectedInput) projectedInput.value = projected.toFixed(2);
-    };
-    
-    calcProjected();
   });
 }
 
@@ -995,253 +884,67 @@ function addOnsiteRow() {
   
   const tr = document.createElement('tr');
   tr.innerHTML = `
-    <td>
-      <div class="input-wrapper">
-        <input type="text" class="onsite-desc" placeholder="Description" />
-        <div class="suggestions-dropdown"></div>
-      </div>
-    </td>
+    <td><input type="text" class="onsite-desc" placeholder="Description" list="onsitePredictDescs" /></td>
     <td><input type="number" class="onsite-in" min="0" step="0.01" placeholder="0" /></td>
     <td><input type="number" class="onsite-out" min="0" step="0.01" placeholder="0" /></td>
-    <td><input type="number" class="onsite-prev-rem" min="0" step="0.01" placeholder="0" disabled /></td>
-    <td><input type="number" class="onsite-projected" min="0" step="0.01" placeholder="0" disabled /></td>
-    <td>
-      <div class="input-wrapper">
-        <input type="text" class="onsite-unit" placeholder="Unit" />
-        <div class="suggestions-dropdown"></div>
-      </div>
-    </td>
+    <td><input type="number" class="onsite-rem" min="0" step="0.01" placeholder="0" disabled /></td>
+    <td><input type="text" class="onsite-unit" placeholder="Unit" /></td>
     <td><button type="button" class="btn danger small">Remove</button></td>
   `;
   
   const descInput = tr.querySelector('.onsite-desc');
-  const descSuggestions = tr.querySelectorAll('.suggestions-dropdown')[0];
-  const prevRemInput = tr.querySelector('.onsite-prev-rem');
-  const projectedInput = tr.querySelector('.onsite-projected');
+  const remInput = tr.querySelector('.onsite-rem');
   const unitInput = tr.querySelector('.onsite-unit');
-  const unitSuggestions = tr.querySelectorAll('.suggestions-dropdown')[1];
   const inInput = tr.querySelector('.onsite-in');
   const outInput = tr.querySelector('.onsite-out');
   
-  let availableUnits = [];
-  let primaryUnit = '';
+  descInput.addEventListener('change', function() {
+    const val = this.value.toUpperCase();
+    this.value = val;
+    if (ONSITE_BALANCES[val]) {
+      unitInput.value = ONSITE_BALANCES[val].unit;
+    }
+    calcRemaining();
+  });
   
-  /**
-   * Show description suggestions from ONSITE_BALANCES
-   */
-  function showDescSuggestions() {
-    const query = descInput.value.trim().toUpperCase();
-    
-    if (!query) {
-      descSuggestions.classList.remove('show');
-      return;
-    }
-    
-    const matches = Object.keys(ONSITE_BALANCES).filter(desc => 
-      desc.indexOf(query) !== -1
-    ).slice(0, 50);
-    
-    if (matches.length === 0) {
-      descSuggestions.classList.remove('show');
-      return;
-    }
-    
-    descSuggestions.innerHTML = '';
-    matches.forEach(match => {
-      const item = document.createElement('div');
-      item.className = 'suggestion-item';
-      item.textContent = match;
-      item.addEventListener('click', () => {
-        descInput.value = match;
-        descSuggestions.classList.remove('show');
-        recallBalanceAndUnits();
-      });
-      descSuggestions.appendChild(item);
-    });
-    
-    descSuggestions.classList.add('show');
-  }
-  
-  /**
-   * Show unit suggestions from historical data
-   */
-  function showUnitSuggestions() {
-    const query = unitInput.value.trim().toUpperCase();
-    
-    if (availableUnits.length === 0) {
-      unitSuggestions.classList.remove('show');
-      return;
-    }
-    
-    if (!query) {
-      unitSuggestions.innerHTML = '';
-      availableUnits.forEach(unit => {
-        const item = document.createElement('div');
-        item.className = 'suggestion-item';
-        item.textContent = unit;
-        item.addEventListener('click', () => {
-          unitInput.value = unit;
-          unitSuggestions.classList.remove('show');
+  descInput.addEventListener('input', async function() {
+    const val = this.value.trim().toUpperCase();
+    if (val.length > 1 && SESSION_TOKEN) {
+      try {
+        const url = new URL(WEB_APP_URL);
+        url.searchParams.set('mode', 'onsite_tx_predict_desc');
+        url.searchParams.set('token', SESSION_TOKEN);
+        url.searchParams.set('q', val);
+        url.searchParams.set('max', '50');
+        const res = await fetch(url.toString(), {cache: 'no-store'});
+        const json = await res.json();
+        const dl = document.getElementById('onsitePredictDescs');
+        dl.innerHTML = '';
+        (json.suggestions || []).forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s;
+          dl.appendChild(opt);
         });
-        unitSuggestions.appendChild(item);
-      });
-      unitSuggestions.classList.add('show');
-      return;
+      } catch (e) {}
     }
-    
-    const matches = availableUnits.filter(unit => unit.indexOf(query) !== -1);
-    
-    if (matches.length === 0) {
-      unitSuggestions.classList.remove('show');
-      return;
-    }
-    
-    unitSuggestions.innerHTML = '';
-    matches.forEach(match => {
-      const item = document.createElement('div');
-      item.className = 'suggestion-item';
-      item.textContent = match;
-      item.addEventListener('click', () => {
-        unitInput.value = match;
-        unitSuggestions.classList.remove('show');
-      });
-      unitSuggestions.appendChild(item);
-    });
-    
-    unitSuggestions.classList.add('show');
-  }
+  });
   
-  /**
-   * Recalls previous remaining balance and available units for the description
-   */
-  async function recallBalanceAndUnits() {
-    const desc = descInput.value.trim().toUpperCase();
-    if (!desc || !SESSION_TOKEN) {
-      prevRemInput.value = '0';
-      availableUnits = [];
-      unitSuggestions.classList.remove('show');
-      calcProjected();
-      return;
-    }
-    
-    try {
-      const siteOn = document.getElementById('siteOn').value.trim();
-      const invDate = document.getElementById('invDate').value;
-      
-      const url = new URL(WEB_APP_URL);
-      url.searchParams.set('mode', 'onsite_tx_prev_remaining');
-      url.searchParams.set('token', SESSION_TOKEN);
-      url.searchParams.set('site', siteOn);
-      url.searchParams.set('date', invDate);
-      url.searchParams.set('desc', desc);
-      
-      const res = await fetch(url.toString(), {cache: 'no-store'});
-      const json = await res.json();
-      
-      if (json && json.ok) {
-        const remaining = parseFloat(json.remaining || 0);
-        const unit = String(json.unit || '');
-        
-        prevRemInput.value = remaining.toFixed(2);
-        primaryUnit = unit;
-        
-        if (unit) {
-          unitInput.value = unit;
-        }
-        
-        availableUnits = [];
-        if (unit) availableUnits.push(unit);
-        
-        await loadHistoricalUnitsForDesc(desc);
-        calcProjected();
-      }
-    } catch (err) {
-      console.warn('Balance recall error:', err);
-      prevRemInput.value = '0';
-      calcProjected();
-    }
-  }
+  unitInput.addEventListener('change', function() { this.value = this.value.toUpperCase(); });
   
-  /**
-   * Loads all unique units used for a description across history
-   */
-  async function loadHistoricalUnitsForDesc(desc) {
-    if (!SESSION_TOKEN) return;
-    
-    try {
-      const url = new URL(WEB_APP_URL);
-      url.searchParams.set('mode', 'onsite_tx_history');
-      url.searchParams.set('token', SESSION_TOKEN);
-      url.searchParams.set('desc', desc);
-      url.searchParams.set('max', '200');
-      
-      const res = await fetch(url.toString(), {cache: 'no-store'});
-      const json = await res.json();
-      
-      if (json && json.ok && json.rows) {
-        const unitSet = new Set();
-        json.rows.forEach(row => {
-          if (row.unit) unitSet.add(row.unit);
-        });
-        const uniqueUnits = Array.from(unitSet).sort();
-        availableUnits = uniqueUnits;
-      }
-    } catch (err) {
-      console.warn('Historical units fetch error:', err);
-    }
-  }
-  
-  /**
-   * Calculates projected remaining balance
-   */
-  function calcProjected() {
-    const mode = document.querySelector('input[name="modeIO"]:checked').value;
-    const prevRem = parseFloat(prevRemInput.value || 0);
+  function calcRemaining() {
+    const desc = descInput.value.toUpperCase();
+    const prev = ONSITE_BALANCES[desc] ? ONSITE_BALANCES[desc].remaining : 0;
     const inVal = parseFloat(inInput.value || 0);
     const outVal = parseFloat(outInput.value || 0);
-    
-    let projected = prevRem;
-    
-    if (mode === 'IN') {
-      projected = prevRem + inVal;
-    } else if (mode === 'OUT') {
-      projected = prevRem - outVal;
-    }
-    
-    if (projected < 0) projected = 0;
-    projectedInput.value = projected.toFixed(2);
+    const rem = Math.abs(prev + (isFinite(inVal) ? inVal : 0) - (isFinite(outVal) ? outVal : 0));
+    remInput.value = rem.toFixed(2);
   }
   
-  // Event listeners for Description
-  descInput.addEventListener('input', showDescSuggestions);
-  descInput.addEventListener('change', function() {
-    this.value = this.value.toUpperCase();
-    recallBalanceAndUnits();
-  });
-  descInput.addEventListener('blur', () => {
-    setTimeout(() => {
-      descSuggestions.classList.remove('show');
-    }, 100);
-  });
-  
-  // Event listeners for Unit
-  unitInput.addEventListener('input', showUnitSuggestions);
-  unitInput.addEventListener('focus', showUnitSuggestions);
-  unitInput.addEventListener('change', function() {
-    this.value = this.value.toUpperCase();
-  });
-  unitInput.addEventListener('blur', () => {
-    setTimeout(() => {
-      unitSuggestions.classList.remove('show');
-    }, 100);
-  });
-  
-  inInput.addEventListener('input', calcProjected);
-  outInput.addEventListener('input', calcProjected);
+  inInput.addEventListener('input', calcRemaining);
+  outInput.addEventListener('input', calcRemaining);
   
   tr.querySelector('button').addEventListener('click', () => tr.remove());
   
-  // Set IN/OUT mode
   const mode = document.querySelector('input[name="modeIO"]:checked').value;
   if (mode === 'IN') {
     outInput.disabled = true;
@@ -1340,19 +1043,8 @@ async function submitOnsiteForm() {
     const unit = row.querySelector('.onsite-unit')?.value.trim().toUpperCase() || '';
     
     if (!desc) continue;
-    if (!unit) {
-      onsiteMsg.innerHTML = '<span class="error">Unit is required for: ' + desc + '</span>';
-      return;
-    }
     
-    items.push({
-      itemDescription: desc,
-      inQty: mode === 'IN' ? inQty : 0,
-      outQty: mode === 'OUT' ? outQty : 0,
-      unit: unit,
-      issuedTo: toProjectSite,
-      docType: docType
-    });
+    items.push({itemDescription: desc, inQty: mode === 'IN' ? inQty : 0, outQty: mode === 'OUT' ? outQty : 0, unit, issuedTo: toProjectSite, docType: docType});
   }
   
   if (items.length === 0) { onsiteMsg.innerHTML = '<span class="error">Please fill at least one item</span>'; return; }
@@ -1402,10 +1094,7 @@ async function runBalanceSearch() {
     
     if (json && json.ok) {
       const rows = json.rows || [];
-      if (rows.length === 0) { 
-        balMsg.innerHTML = '<span class="help">No exact match found for "' + balDesc + '".</span>';
-        return; 
-      }
+      if (rows.length === 0) { balMsg.textContent = 'No matches found'; return; }
       
       balMsg.textContent = `${rows.length} result(s) found`;
       rows.forEach(row => {
